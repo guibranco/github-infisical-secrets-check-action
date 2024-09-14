@@ -7,7 +7,7 @@
 
 ![CI](https://github.com/guibranco/github-infisical-secrets-check-action/actions/workflows/ci.yml/badge.svg)
 
-🚨 :octocat: A GitHub action to check and report secrets leaks in the repository using [Infisical CLI](https://infisical.com/docs/cli/commands/scan).
+🚨 :octocat: A GitHub action to check and report secret leaks in the repository using [Infisical CLI](https://infisical.com/docs/cli/commands/scan).
 
 ## Usage
 
@@ -35,7 +35,6 @@ on:
       steps:
         - uses: actions/checkout@v4
           
-
         - name: Run the action
           uses: guibranco/github-infisical-secrets-check-action@latest
 ```
