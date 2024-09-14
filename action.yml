@@ -3,11 +3,6 @@ description: "Run Infisical secrets check on a GitHub repository."
 branding:
   icon: 'alert-triangle'
   color: 'green'
-inputs:
-  add-comment:
-    description: "If should add a comment to the PR"
-    required: false
-    default: true
 runs:
   using: "composite"
   steps:
@@ -96,7 +91,7 @@ runs:
 
     - name: Update PR with comment
       uses: mshick/add-pr-comment@v2
-      if: always() && ${{ inputs.add-comment == 'true' }}
+      if: always()
       with:
         refresh-message-position: true
         message-id: "secrets-result"
