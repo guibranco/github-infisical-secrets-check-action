@@ -89,9 +89,9 @@ runs:
       with:
         path: fingerprint.txt
 
-    - name: Update PR with comment
+    - name: Update PR with comment (success)
       uses: mshick/add-pr-comment@v2
-      if: always()
+      if: success()
       with:
         refresh-message-position: true
         message-id: "secrets-result"
@@ -102,7 +102,14 @@ runs:
           ```
           ${{ steps.log.outputs.contents }}
           ```
-        message-failure: |
+
+    - name: Update PR with comment (failure)
+      uses: mshick/add-pr-comment@v2
+      if: failure()
+      with:
+        refresh-message-position: true
+        message-id: "secrets-result"        
+        message: |
           **Infisical secrets check:** :rotating_light: Secrets leaked!     
 
           **Scan results:**
@@ -135,5 +142,11 @@ runs:
           > [!TIP]
           > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
 
-        message-cancelled: |
+    - name: Update PR with comment (cancelled)
+      uses: mshick/add-pr-comment@v2
+      if: cancelled()
+      with:
+        refresh-message-position: true
+        message-id: "secrets-result"        
+        message: |
           **Infisical secrets check:** :o: Secrets check cancelled!
