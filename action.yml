@@ -1,5 +1,8 @@
 name: "Infisical secrets check"
 description: "Run Infisical secrets check on a GitHub repository."
+branding:
+  icon: 'alert-triangle'
+  color: 'green'
 inputs:
   add-comment:
     description: "If should add a comment to the PR"
