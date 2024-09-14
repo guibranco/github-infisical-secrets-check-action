@@ -96,7 +96,7 @@ runs:
 
     - name: Update PR with comment
       uses: mshick/add-pr-comment@v2
-      if: always() && ${{ inputs.add-comment }}
+      if: always() && ${{ inputs.add-comment == 'true' }}
       with:
         refresh-message-position: true
         message-id: "secrets-result"
