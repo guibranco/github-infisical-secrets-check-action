@@ -1,0 +1,146 @@
+name: "Infisical secrets check"
+description: "Run Infisical secrets check on a GitHub repository."
+inputs:
+  add-comment:
+    description: "If should add a comment to the PR"
+    required: false
+    default: true
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set Infisical package source
+      shell: bash
+      run: curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | sudo -E bash
+
+    - name: Install tools
+      shell: bash
+      run: |
+        sudo apt-get update && sudo apt-get install -y infisical
+        pip install csvkit
+        npm install -g csv-to-markdown-table
+
+    - name: Run scan
+      shell: bash
+      run: infisical scan --redact -f csv -r secrets-result-raw.csv 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' >secrets-result.log)
+
+    - name: Generate report
+      shell: bash
+      if: failure()
+      run: |
+        if [[ -s secrets-result-raw.csv ]]; then
+          csvformat -M $'\r' secrets-result-raw.csv | sed -e ':a' -e 'N;$!ba' -e 's/\n/\\n/g' | tr '\r' '\n' > secrets.csv
+          head -n 11 < secrets.csv > secrets-result.csv
+          csv-to-markdown-table --delim , --headers < secrets-result.csv > secrets-result.md
+          awk -F, '{print $NF}' < secrets.csv | tail -n +2 > fingerprint.txt
+        fi
+
+    - name: Upload artifacts secrets-result.log
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: report-log
+        path: secrets-result.log
+
+    - name: Upload artifacts secrets.csv
+      uses: actions/upload-artifact@v4
+      if: failure()
+      id: secrets
+      with:
+        name: secrets-csv
+        path: secrets.csv
+
+    - name: Upload artifacts secrets-result.csv
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: report-csv
+        path: secrets-result.csv
+
+    - name: Upload artifacts secrets-result.md
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: report-md
+        path: secrets-result.md
+
+    - name: Upload artifacts fingerprint.txt
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: fingerprint-txt
+        path: fingerprint.txt
+
+    - name: Read secrets-result.log
+      uses: guibranco/github-file-reader-action-v2@v2.2.689
+      if: always()
+      id: log
+      with:
+        path: secrets-result.log
+
+    - name: Read secrets-result.md
+      uses: guibranco/github-file-reader-action-v2@v2.2.689
+      if: failure()
+      id: report
+      with:
+        path: secrets-result.md
+
+    - name: Read fingerprint.txt
+      uses: guibranco/github-file-reader-action-v2@v2.2.689
+      if: failure()
+      id: fingerprint
+      with:
+        path: fingerprint.txt
+
+    - name: Update PR with comment
+      uses: mshick/add-pr-comment@v2
+      if: always() && ${{ inputs.add-comment }}
+      with:
+        refresh-message-position: true
+        message-id: "secrets-result"
+        message: |
+          **Infisical secrets check:** :white_check_mark: No secrets leaked!
+
+          **Scan results:**
+          ```
+          ${{ steps.log.outputs.contents }}
+          ```
+        message-failure: |
+          **Infisical secrets check:** :rotating_light: Secrets leaked!     
+
+          **Scan results:**
+          ```
+          ${{ steps.log.outputs.contents }}
+          ```
+
+          ---
+
+          <details>
+            <summary>🔎 Detected secrets in your GIT history</summary>
+            
+            ${{ steps.report.outputs.contents }}            
+          </details>
+
+          <details>
+            <summary>🐾 Secrets fingerprint</summary>              
+
+            ```txt
+            ${{ steps.fingerprint.outputs.contents }}
+            ```              
+          </details>
+
+          ---
+
+          > [!WARNING] 
+          > The above table only displays the first 10 leaked secrets.
+          > You can find the full report here: [secrets.csv](${{ steps.secrets.outputs.artifact-url }})
+
+          > [!TIP]
+          > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
+
+        message-cancelled: |
+          **Infisical secrets check:** :o: Secrets check cancelled!
