@@ -113,10 +113,13 @@ runs:
         message: |
           **Infisical secrets check:** ✅ No secrets leaked!
 
-          **Scan results:**
-          ```
-          ${{ steps.log.outputs.contents }}
-          ```
+          <details>
+            <summary>💻 Scan logs</summary>
+         
+            ```txt
+            ${{ steps.log.outputs.contents }}
+            ```
+          </details>
 
     - name: Update PR with comment (failure)
       uses: mshick/add-pr-comment@v2
@@ -132,10 +135,13 @@ runs:
           > Please review the scan results and take the necessary actions.
           > Secrets found: ${{ steps.count.outputs.secrets-leaked }}
 
-          **Scan results:**
-          ```
-          ${{ steps.log.outputs.contents }}
-          ```
+          <details>
+            <summary>💻 Scan logs</summary>
+         
+            ```txt
+            ${{ steps.log.outputs.contents }}
+            ```
+          </details>
 
           ---
 
@@ -145,6 +151,12 @@ runs:
             ${{ steps.report.outputs.contents }}            
           </details>
 
+          > [!WARNING] 
+          > The above table only displays the first 10 leaked secrets.
+          > You can find the full report here: [secrets.csv](${{ steps.secrets.outputs.artifact-url }})
+
+          ---
+
           <details>
             <summary>🐾 Secrets fingerprint</summary>              
 
@@ -152,12 +164,6 @@ runs:
             ${{ steps.fingerprint.outputs.contents }}
             ```              
           </details>
-
-          ---
-
-          > [!WARNING] 
-          > The above table only displays the first 10 leaked secrets.
-          > You can find the full report here: [secrets.csv](${{ steps.secrets.outputs.artifact-url }})
 
           > [!TIP]
           > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
