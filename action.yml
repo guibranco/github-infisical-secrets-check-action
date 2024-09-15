@@ -1,8 +1,12 @@
 name: "Infisical secrets check"
 description: "Run Infisical secrets check on a GitHub repository."
 branding:
-  icon: 'alert-triangle'
-  color: 'green'
+  icon: "alert-triangle"
+  color: "green"
+outputs:
+  secrets-leaked:
+    description: "The number of secrets leaked found by the Infisical CLI tool."
+    value: ${{ steps.count.outputs.secrets-leaked }}
 runs:
   using: "composite"
   steps:
@@ -31,6 +35,16 @@ runs:
           csv-to-markdown-table --delim , --headers < secrets-result.csv > secrets-result.md
           awk -F, '{print $NF}' < secrets.csv | tail -n +2 > fingerprint.txt
         fi
+
+    - name: Count secrets leaked
+      shell: bash
+      id: count
+      run: |
+        quantity=0
+        if [[ -s fingerprint.txt ]]; then
+            quantity=$(wc -l fingerprint.txt | cut -c1)
+        fi
+        echo "secrets-leaked=$(echo $quantity)" >> $GITHUB_OUTPUT
 
     - name: Upload artifacts secrets-result.log
       uses: actions/upload-artifact@v4
@@ -108,9 +122,14 @@ runs:
       if: failure()
       with:
         refresh-message-position: true
-        message-id: "secrets-result"        
+        message-id: "secrets-result"
         message: |
-          **Infisical secrets check:** :rotating_light: Secrets leaked!     
+          **Infisical secrets check:** :rotating_light: Secrets leaked!
+
+          > [!CAUTION]
+          > The Infisical CLI tool found secrets leaked in your repository.
+          > Please review the scan results and take the necessary actions.
+          > Secrets found: ${{ steps.count.outputs.secrets-leaked }}
 
           **Scan results:**
           ```
@@ -147,6 +166,6 @@ runs:
       if: cancelled()
       with:
         refresh-message-position: true
-        message-id: "secrets-result"        
+        message-id: "secrets-result"
         message: |
           **Infisical secrets check:** :o: Secrets check cancelled!
