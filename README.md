@@ -9,6 +9,8 @@
 
 🚨 :octocat: A GitHub action to check and report secret leaks in the repository using [Infisical CLI](https://infisical.com/docs/cli/commands/scan).
 
+---
+
 ## Usage
 
 None.
@@ -16,6 +18,8 @@ None.
 ## Outputs
 
 None.
+
+---
 
 ## Example
 
@@ -38,3 +42,14 @@ on:
         - name: Run the action
           uses: guibranco/github-infisical-secrets-check-action@latest
 ```
+---
+
+## Sample output
+
+### Success - no secrets leaked
+
+[!success](success.png)
+
+### Failure - secrets leaked
+
+[!failure](failure.png)
