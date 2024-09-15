@@ -38,6 +38,7 @@ runs:
 
     - name: Count secrets leaked
       shell: bash
+      if: always()
       id: count
       run: |
         quantity=0
