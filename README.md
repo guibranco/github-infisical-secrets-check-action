@@ -46,10 +46,10 @@ on:
 
 ## Sample output
 
-### Success - no secrets leaked
+### Success - ✅ No secrets leaked
 
-[!success](success.png)
+![success](success.png)
 
-### Failure - secrets leaked
+### Failure - 🚨 Secrets leaked!
 
-[!failure](failure.png)
+![failure](failure.png)
