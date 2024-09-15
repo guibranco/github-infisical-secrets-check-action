@@ -110,7 +110,7 @@ runs:
         refresh-message-position: true
         message-id: "secrets-result"
         message: |
-          **Infisical secrets check:** :white_check_mark: No secrets leaked!
+          **Infisical secrets check:** ✅ No secrets leaked!
 
           **Scan results:**
           ```
@@ -124,7 +124,7 @@ runs:
         refresh-message-position: true
         message-id: "secrets-result"
         message: |
-          **Infisical secrets check:** :rotating_light: Secrets leaked!
+          **Infisical secrets check:** 🚨 Secrets leaked!
 
           > [!CAUTION]
           > The Infisical CLI tool found secrets leaked in your repository.
@@ -168,4 +168,4 @@ runs:
         refresh-message-position: true
         message-id: "secrets-result"
         message: |
-          **Infisical secrets check:** :o: Secrets check cancelled!
+          **Infisical secrets check:** ⭕ Secrets check cancelled!
