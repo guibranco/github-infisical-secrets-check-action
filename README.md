@@ -12,11 +12,18 @@
 
 ## Usage
 
-None.
+The following example workflow step will scan for secrets leak, add a comment to the pull request and output the quantity of secrets leaked.
+
+```yml
+
+  - name: Run the action
+    uses: guibranco/github-infisical-secrets-check-action@latest
+    id: secrets-scan
+```
 
 ## Outputs
 
-None.
+- `secrets-leaked`: The number of secrets leaked found by the Infisical CLI tool.
 
 ---
 
