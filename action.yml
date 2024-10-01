@@ -43,7 +43,7 @@ runs:
       run: |
         quantity=0
         if [[ -s fingerprint.txt ]]; then
-            quantity=$(wc -l fingerprint.txt | cut -c1)
+            quantity=$(wc -l < fingerprint.txt)
         fi
         echo "secrets-leaked=$(echo $quantity)" >> $GITHUB_OUTPUT
 
