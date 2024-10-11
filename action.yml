@@ -3,6 +3,11 @@ description: "Run Infisical secrets check on a GitHub repository."
 branding:
   icon: "alert-triangle"
   color: "green"
+inputs:
+  GH_TOKEN:
+    description: 'GitHub token'
+    required: false
+    default: ${{ secrets.GITHUB_TOKEN }}
 outputs:
   secrets-leaked:
     description: "The number of secrets leaked found by the Infisical CLI tool."
@@ -108,6 +113,7 @@ runs:
       uses: mshick/add-pr-comment@v2
       if: success()
       with:
+        repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
         message-id: "secrets-result"
         message: |
@@ -125,6 +131,7 @@ runs:
       uses: mshick/add-pr-comment@v2
       if: failure()
       with:
+        repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
         message-id: "secrets-result"
         message: |
@@ -172,6 +179,7 @@ runs:
       uses: mshick/add-pr-comment@v2
       if: cancelled()
       with:
+        repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
         message-id: "secrets-result"
         message: |
