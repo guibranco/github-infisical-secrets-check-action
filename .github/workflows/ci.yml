@@ -26,7 +26,7 @@ jobs:
         id: test-action
         uses: ./
         with:
-          GH_TOKEN: 'token test'
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Print Output
         id: output
