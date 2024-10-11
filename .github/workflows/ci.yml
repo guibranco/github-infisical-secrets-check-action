@@ -32,7 +32,7 @@ jobs:
 
   create-release:
     name: Create release
-    # needs: [test-typescript, test-action]
+    needs: test-action
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
