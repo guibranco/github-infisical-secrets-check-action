@@ -13,22 +13,22 @@ permissions:
 
 jobs:
   
-  # test-action:
-  #   name: GitHub Actions Test
-  #   runs-on: ubuntu-latest
+  test-action:
+    name: GitHub Actions Test
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout
-  #       id: checkout
-  #       uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
 
-  #     - name: Test Local Action
-  #       id: test-action
-  #       uses: ./
+      - name: Test Local Action
+        id: test-action
+        uses: ./
 
-  #     - name: Print Output
-  #       id: output
-  #       run: echo "${{ steps.test-action.outputs.time }}"
+      - name: Print Output
+        id: output
+        run: echo "${{ steps.test-action.outputs.leaked-secrets }}"
 
   create-release:
     name: Create release
