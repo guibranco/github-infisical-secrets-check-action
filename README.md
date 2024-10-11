@@ -21,6 +21,14 @@ The following example workflow step will scan for secrets leak, add a comment to
     id: secrets-scan
 ```
 
+---
+
+## Inputs
+
+- `gh_token`: The GitHub token to add the comment in the PR using the [mshick/add-pr-comment@v2](https://github.com/mshick/add-pr-comment) GitHub Action.
+
+---
+
 ## Outputs
 
 - `secrets-leaked`: The number of secrets leaked found by the Infisical CLI tool.
@@ -28,6 +36,8 @@ The following example workflow step will scan for secrets leak, add a comment to
 ---
 
 ## Example
+
+### With default (inherited) GitHub token
 
 ```yml
 name: 'Infisical secrets check'
@@ -48,6 +58,33 @@ on:
         - name: Run the action
           uses: guibranco/github-infisical-secrets-check-action@latest
 ```
+
+### With a custom GitHub token
+
+```yml
+name: 'Infisical secrets check'
+
+on:
+  pull_request:
+
+  jobs:
+    check-secrets:
+      runs-on: ubuntu-latest
+      permissions:
+        contents: read
+        pull-requests: write
+
+      steps:
+        - uses: actions/checkout@v4
+          
+        - name: Run the action
+          uses: guibranco/github-infisical-secrets-check-action@latest
+          with:
+            gh_token: ${{ secrets.GH_TOKEN }}
+```
+
+Remember to add the repository secret `GH_TOKEN`.
+
 ---
 
 ## Sample output
