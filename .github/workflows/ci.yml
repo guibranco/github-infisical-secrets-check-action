@@ -25,6 +25,8 @@ jobs:
       - name: Test Local Action
         id: test-action
         uses: ./
+        with:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Print Output
         id: output
@@ -32,7 +34,7 @@ jobs:
 
   create-release:
     name: Create release
-    # needs: [test-typescript, test-action]
+    needs: test-action
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
