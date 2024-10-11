@@ -18,7 +18,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update && sudo apt-get install -y infisical
-        pip install csvkit
+        pip install csvkit --break-system-packages
         npm install -g csv-to-markdown-table
 
     - name: Run scan
