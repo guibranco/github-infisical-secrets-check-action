@@ -7,7 +7,7 @@ inputs:
   GH_TOKEN:
     description: 'GitHub token'
     required: false
-    default: ${{ secrets.GITHUB_TOKEN }}
+    default: ${{ github.TOKEN }}
 outputs:
   secrets-leaked:
     description: "The number of secrets leaked found by the Infisical CLI tool."
