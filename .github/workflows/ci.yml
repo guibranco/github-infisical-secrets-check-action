@@ -25,6 +25,8 @@ jobs:
       - name: Test Local Action
         id: test-action
         uses: ./
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print Output
         id: output
