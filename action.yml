@@ -18,12 +18,19 @@ runs:
     - name: Set Infisical package source
       shell: bash
       run: curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | sudo -E bash
-
+   
     - name: Install tools
       shell: bash
       run: |
+        version=$(pip show pip | grep Version: | cut -d' ' -f2)
+        lower=$(printf "23.1\n$version" | sort -V | head -n1)        
         sudo apt-get update && sudo apt-get install -y infisical
-        pip install csvkit --break-system-packages
+        if [ "$lower" == "23.1" ] 
+        then
+          pip install csvkit --break-system-packages
+        else
+          pip install csvkit
+        fi
         npm install -g csv-to-markdown-table
 
     - name: Run scan
