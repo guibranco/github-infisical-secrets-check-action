@@ -1,0 +1,4 @@
+         uses: gittools/actions/gitversion/setup@v2
+         with:
+-          versionSpec: '5.x'
+          versionSpec: '6.x'
