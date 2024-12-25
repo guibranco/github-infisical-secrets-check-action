@@ -1,4 +1,4 @@
 theme: jekyll-theme-cayman
-title: 🚨 :octocat: A GitHub action to check and report secrets leaks in the repository using Infisical CLI
-description: 🚨 :octocat: A GitHub action to check and report secret leaks in the repository using Infisical CLI.
+title: "🚨 :octocat: A GitHub action to check and report secrets leaks in the repository using Infisical CLI"
+description: "🚨 :octocat: A GitHub action to check and report secret leaks in the repository using Infisical CLI."
 show_downloads: true
