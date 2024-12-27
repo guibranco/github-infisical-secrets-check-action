@@ -14,7 +14,7 @@
 
 ## Usage
 
-The following example workflow step will scan for secrets leak, add a comment to the pull request and output the quantity of secrets leaked.
+The following workflow step will scan for secret leaks in your repository.
 
 ```yml
 
