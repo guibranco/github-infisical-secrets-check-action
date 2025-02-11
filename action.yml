@@ -15,6 +15,15 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Check if PR is from a fork
+      id: check_fork
+      run: |
+        if [[ "${{ github.event.pull_request.head.repo.fork }}" == "true" ]]; then
+          echo "FORKED=true" >> $GITHUB_ENV
+        else
+          echo "FORKED=false" >> $GITHUB_ENV
+        fi
+
     - name: Set Infisical package source
       shell: bash
       run: curl -1sLf 'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' | sudo -E bash
@@ -118,7 +127,7 @@ runs:
 
     - name: Update PR with comment (success)
       uses: mshick/add-pr-comment@v2
-      if: success()
+      if: success() && env.FORKED == 'false'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
@@ -136,7 +145,7 @@ runs:
 
     - name: Update PR with comment (failure)
       uses: mshick/add-pr-comment@v2
-      if: failure()
+      if: failure() && env.FORKED == 'false'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
@@ -184,7 +193,7 @@ runs:
 
     - name: Update PR with comment (cancelled)
       uses: mshick/add-pr-comment@v2
-      if: cancelled()
+      if: cancelled() && env.FORKED == 'false'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
