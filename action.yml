@@ -105,21 +105,21 @@ runs:
         path: fingerprint.txt
 
     - name: Read secrets-result.log
-      uses: guibranco/github-file-reader-action-v2@v2.2.754
+      uses: guibranco/github-file-reader-action-v2@v2.2.756
       if: always()
       id: log
       with:
         path: secrets-result.log
 
     - name: Read secrets-result.md
-      uses: guibranco/github-file-reader-action-v2@v2.2.754
+      uses: guibranco/github-file-reader-action-v2@v2.2.756
       if: failure()
       id: report
       with:
         path: secrets-result.md
 
     - name: Read fingerprint.txt
-      uses: guibranco/github-file-reader-action-v2@v2.2.754
+      uses: guibranco/github-file-reader-action-v2@v2.2.756
       if: failure()
       id: fingerprint
       with:
