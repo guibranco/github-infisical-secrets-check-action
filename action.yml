@@ -8,6 +8,10 @@ inputs:
     description: 'GitHub token'
     required: false
     default: ${{ github.TOKEN }}
+  ADD_COMMENT:
+    description: 'Comment result in the pull request'
+    required: false
+    defualt: true
 outputs:
   secrets-leaked:
     description: "The number of secrets leaked found by the Infisical CLI tool."
@@ -127,7 +131,7 @@ runs:
 
     - name: Update PR with comment (success)
       uses: mshick/add-pr-comment@v2
-      if: success() && env.FORKED == 'false'
+      if: success() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
@@ -145,7 +149,7 @@ runs:
 
     - name: Update PR with comment (failure)
       uses: mshick/add-pr-comment@v2
-      if: failure() && env.FORKED == 'false'
+      if: failure() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
@@ -193,7 +197,7 @@ runs:
 
     - name: Update PR with comment (cancelled)
       uses: mshick/add-pr-comment@v2
-      if: cancelled() && env.FORKED == 'false'
+      if: cancelled() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
