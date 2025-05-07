@@ -17,9 +17,9 @@ The following workflow step will scan for secret leaks in your repository.
 
 ```yml
 
-  - name: Run the action
-    uses: guibranco/github-infisical-secrets-check-action@latest
+  - name: Infisical Secrets Check
     id: secrets-scan
+    uses: guibranco/github-infisical-secrets-check-action@v3.0.0
 ```
 
 ---
@@ -41,43 +41,37 @@ The following workflow step will scan for secret leaks in your repository.
 ### With default (inherited) GitHub token
 
 ```yml
-name: 'Infisical secrets check'
+name: Infisical secrets check
 
 on:
+  workflow_dispatch:
   pull_request:
 
-  jobs:
-    check-secrets:
-      runs-on: ubuntu-latest
-      permissions:
-        contents: read
-        pull-requests: write
-
-      steps:          
-        - name: Run the action
-          uses: guibranco/github-infisical-secrets-check-action@latest
+jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Infisical Secrets Check
+        uses: guibranco/github-infisical-secrets-check-action@v3.0.0
 ```
 
 ### With a custom GitHub token
 
 ```yml
-name: 'Infisical secrets check'
+name: Infisical secrets check
 
 on:
+  workflow_dispatch:
   pull_request:
 
-  jobs:
-    check-secrets:
-      runs-on: ubuntu-latest
-      permissions:
-        contents: read
-        pull-requests: write
-
-      steps:         
-        - name: Run the action
-          uses: guibranco/github-infisical-secrets-check-action@latest
-          with:
-            gh_token: ${{ secrets.GH_TOKEN }}
+jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Infisical Secrets Check
+        uses: guibranco/github-infisical-secrets-check-action@v3.0.0
+        with:
+          gh_token: ${{ secrets.GH_TOKEN }}
 ```
 
 Remember to add the repository secret `GH_TOKEN`.
