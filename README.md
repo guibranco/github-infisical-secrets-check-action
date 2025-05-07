@@ -53,9 +53,7 @@ on:
         contents: read
         pull-requests: write
 
-      steps:
-        - uses: actions/checkout@v4
-          
+      steps:          
         - name: Run the action
           uses: guibranco/github-infisical-secrets-check-action@latest
 ```
@@ -75,9 +73,7 @@ on:
         contents: read
         pull-requests: write
 
-      steps:
-        - uses: actions/checkout@v4
-          
+      steps:         
         - name: Run the action
           uses: guibranco/github-infisical-secrets-check-action@latest
           with:
