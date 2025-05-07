@@ -171,6 +171,7 @@ runs:
 
           <details>
             <summary>💻 Scan logs</summary>
+            
             ```txt
             ${{ steps.log.outputs.contents }}
             ```
@@ -193,6 +194,7 @@ runs:
 
           <details>
             <summary>💻 Scan logs</summary>
+            
             ```txt
             ${{ steps.log.outputs.contents }}
             ```
@@ -213,6 +215,7 @@ runs:
 
           <details>
             <summary>🐾 Secrets fingerprint</summary>
+            
             ```txt
             ${{ steps.fingerprint.outputs.contents }}
             ```
