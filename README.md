@@ -50,6 +50,8 @@ on:
 jobs:
   secrets-check:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Infisical Secrets Check
         uses: guibranco/github-infisical-secrets-check-action@v3.0.0
@@ -67,6 +69,8 @@ on:
 jobs:
   secrets-check:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Infisical Secrets Check
         uses: guibranco/github-infisical-secrets-check-action@v3.0.0
