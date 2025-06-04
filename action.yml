@@ -50,19 +50,35 @@ runs:
         restore-keys: |
           ${{ runner.os }}-npm-
 
+    - name: Get latest Infisical CLI version
+      id: infisical-version
+      shell: bash
+      run: |
+        JSON=$(curl -s https://api.github.com/repos/Infisical/infisical/releases/latest)
+        TAG_NAME=$(echo "$JSON" | jq -r '.tag_name')  # e.g., "infisical-cli/v0.41.1"
+        VERSION=$(echo "$TAG_NAME" | sed 's|infisical-cli/v||')
+        echo "🔍 Latest version: $VERSION"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
     - name: Cache Infisical CLI
       uses: actions/cache@v4
       id: infisical-cache
       with:
         path: .tools/infisical
-        key: ${{ runner.os }}-infisical-v0.41.1
+        key: ${{ runner.os }}-infisical-v${{ steps.infisical-version.outputs.version }}
 
     - name: Install Infisical CLI if needed
       if: steps.infisical-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        VERSION=${{ steps.infisical-version.outputs.version }}
+        TAG_NAME="infisical-cli/v$VERSION"
+        ASSET="infisical_${VERSION}_linux_amd64.tar.gz"
+        URL="https://github.com/Infisical/infisical/releases/download/${TAG_NAME//\//%2F}/$ASSET"
+
+        echo "⬇️ Downloading Infisical CLI $VERSION from $URL"
         mkdir -p .tools/infisical
-        curl -sL https://github.com/Infisical/infisical/releases/download/infisical-cli%2Fv0.41.1/infisical_0.41.1_linux_amd64.tar.gz | tar -xz -C .tools/infisical
+        curl -sL "$URL" | tar -xz -C .tools/infisical
         chmod +x .tools/infisical/infisical
 
     - name: Add Infisical to PATH
