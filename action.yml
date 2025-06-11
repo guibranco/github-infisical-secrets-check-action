@@ -225,7 +225,9 @@ runs:
 
           <details>
             <summary>🔎 Detected secrets in your GIT history</summary>
+
             ${{ steps.report.outputs.contents }}
+
           </details>
 
           > [!WARNING] 
