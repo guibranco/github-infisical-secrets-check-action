@@ -109,7 +109,7 @@ runs:
           csvformat -M $'\r' secrets-result-raw.csv | sed -e ':a' -e 'N;$!ba' -e 's/\n/\\n/g' | tr '\r' '\n' > secrets.csv
           head -n 11 < secrets.csv > secrets-result.csv
           csv-to-markdown-table --delim , --headers < secrets-result.csv > secrets-result.md
-          awk -F, '{print $NF}' < secrets.csv | tail -n +2 > fingerprint.txt
+          awk -F, '{print $(NF-2)}' < secrets.csv | tail -n +2 > fingerprint.txt
         fi
 
     - name: Count secrets leaked
