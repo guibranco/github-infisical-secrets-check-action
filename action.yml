@@ -45,7 +45,7 @@ runs:
     - name: Cache npm global packages
       uses: actions/cache@v4
       with:
-        path: ~/.npm
+        path: ~/.cache/npm
         key: ${{ runner.os }}-npm-csv2md-v1
         restore-keys: |
           ${{ runner.os }}-npm-
@@ -54,21 +54,33 @@ runs:
       id: infisical-version
       shell: bash
       run: |
+        echo "🔍 Fetching latest Infisical CLI version..."
         JSON=$(curl -s https://api.github.com/repos/Infisical/infisical/releases/latest)
-        TAG_NAME=$(echo "$JSON" | jq -r '.tag_name')  # e.g., "infisical-cli/v0.41.1"
+        TAG_NAME=$(echo "$JSON" | jq -r '.tag_name')
+        
+        # Check if we got a valid response
+        if [[ "$TAG_NAME" == "null" || -z "$TAG_NAME" ]]; then
+          echo "❌ Failed to fetch latest version from GitHub API"
+          echo "Response: $JSON"
+          echo "FETCH_FAILED=true" >> $GITHUB_ENV
+          exit 1
+        fi
+        
         VERSION=$(echo "$TAG_NAME" | sed 's|infisical-cli/v||')
         echo "🔍 Latest version: $VERSION"
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "FETCH_FAILED=false" >> $GITHUB_ENV
 
     - name: Cache Infisical CLI
       uses: actions/cache@v4
       id: infisical-cache
+      if: env.FETCH_FAILED != 'true'
       with:
         path: .tools/infisical
         key: ${{ runner.os }}-infisical-v${{ steps.infisical-version.outputs.version }}
 
     - name: Install Infisical CLI if needed
-      if: steps.infisical-cache.outputs.cache-hit != 'true'
+      if: env.FETCH_FAILED != 'true' && steps.infisical-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
         VERSION=${{ steps.infisical-version.outputs.version }}
@@ -78,15 +90,26 @@ runs:
 
         echo "⬇️ Downloading Infisical CLI $VERSION from $URL"
         mkdir -p .tools/infisical
-        curl -sL "$URL" | tar -xz -C .tools/infisical
+        
+        # Download and verify
+        if ! curl -sL "$URL" | tar -xz -C .tools/infisical; then
+          echo "❌ Failed to download or extract Infisical CLI"
+          echo "INSTALL_FAILED=true" >> $GITHUB_ENV
+          exit 1
+        fi
+        
         chmod +x .tools/infisical/infisical
+        echo "✅ Infisical CLI installed successfully"
+        echo "INSTALL_FAILED=false" >> $GITHUB_ENV
 
     - name: Add Infisical to PATH
       shell: bash
+      if: env.FETCH_FAILED != 'true' && env.INSTALL_FAILED != 'true'
       run: echo "$GITHUB_WORKSPACE/.tools/infisical" >> $GITHUB_PATH
 
     - name: Install tools
       shell: bash
+      if: env.FETCH_FAILED != 'true' && env.INSTALL_FAILED != 'true'
       run: |
         version=$(pip show pip | grep Version: | cut -d' ' -f2)
         lower=$(printf "23.1\n$version" | sort -V | head -n1)
@@ -99,17 +122,41 @@ runs:
 
     - name: Run scan
       shell: bash
-      run: infisical scan --redact -f csv -r secrets-result-raw.csv 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' >secrets-result.log)
-
-    - name: Generate report
-      shell: bash
-      if: failure()
+      if: env.FETCH_FAILED != 'true' && env.INSTALL_FAILED != 'true'
       run: |
-        if [[ -s secrets-result-raw.csv ]]; then
-          csvformat -M $'\r' secrets-result-raw.csv | sed -e ':a' -e 'N;$!ba' -e 's/\n/\\n/g' | tr '\r' '\n' > secrets.csv
-          head -n 11 < secrets.csv > secrets-result.csv
-          csv-to-markdown-table --delim , --headers < secrets-result.csv > secrets-result.md
-          awk -F, '{print $(NF-2)}' < secrets.csv | tail -n +2 > fingerprint.txt
+        echo "🔍 Running Infisical secrets scan..."
+        if infisical scan --redact -f csv -r secrets-result-raw.csv 2>&1 | tee >(sed -r 's/\x1b\[[0-9;]*m//g' >secrets-result.log); then
+          echo "SCAN_SUCCESS=true" >> $GITHUB_ENV
+        else
+          echo "SCAN_SUCCESS=false" >> $GITHUB_ENV
+          # Even if scan fails, we want to continue to check if it was due to secrets found
+        fi
+
+    - name: Check scan results and generate report
+      shell: bash
+      if: always() && env.FETCH_FAILED != 'true' && env.INSTALL_FAILED != 'true'
+      run: |
+        # Check if scan actually ran and produced results
+        if [[ -f "secrets-result.log" ]]; then
+          echo "SCAN_RAN=true" >> $GITHUB_ENV
+          
+          # Check if secrets were found (file exists and has content)
+          if [[ -s "secrets-result-raw.csv" ]]; then
+            echo "SECRETS_FOUND=true" >> $GITHUB_ENV
+            echo "🚨 Secrets detected, generating report..."
+            
+            # Process the CSV file
+            csvformat -M $'\r' secrets-result-raw.csv | sed -e ':a' -e 'N;$!ba' -e 's/\n/\\n/g' | tr '\r' '\n' > secrets.csv
+            head -n 11 < secrets.csv > secrets-result.csv
+            csv-to-markdown-table --delim , --headers < secrets-result.csv > secrets-result.md
+            awk -F, '{print $(NF-2)}' < secrets.csv | tail -n +2 > fingerprint.txt
+          else
+            echo "SECRETS_FOUND=false" >> $GITHUB_ENV
+            echo "✅ No secrets detected"
+          fi
+        else
+          echo "SCAN_RAN=false" >> $GITHUB_ENV
+          echo "❌ Scan did not run properly - no log file generated"
         fi
 
     - name: Count secrets leaked
@@ -121,18 +168,18 @@ runs:
         if [[ -s fingerprint.txt ]]; then
             quantity=$(wc -l < fingerprint.txt)
         fi
-        echo "secrets-leaked=$(echo $quantity)" >> $GITHUB_OUTPUT
+        echo "secrets-leaked=$quantity" >> $GITHUB_OUTPUT
 
     - name: Upload artifacts secrets-result.log
       uses: actions/upload-artifact@v4
-      if: always()
+      if: always() && env.SCAN_RAN == 'true'
       with:
         name: report-log
         path: secrets-result.log
 
     - name: Upload artifacts secrets.csv
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: env.SECRETS_FOUND == 'true'
       id: secrets
       with:
         name: secrets-csv
@@ -140,49 +187,49 @@ runs:
 
     - name: Upload artifacts secrets-result.csv
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: env.SECRETS_FOUND == 'true'
       with:
         name: report-csv
         path: secrets-result.csv
 
     - name: Upload artifacts secrets-result.md
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: env.SECRETS_FOUND == 'true'
       with:
         name: report-md
         path: secrets-result.md
 
     - name: Upload artifacts fingerprint.txt
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: env.SECRETS_FOUND == 'true'
       with:
         name: fingerprint-txt
         path: fingerprint.txt
 
     - name: Read secrets-result.log
       uses: guibranco/github-file-reader-action-v2@v2.2.822
-      if: always()
+      if: always() && env.SCAN_RAN == 'true'
       id: log
       with:
         path: secrets-result.log
 
     - name: Read secrets-result.md
       uses: guibranco/github-file-reader-action-v2@v2.2.822
-      if: failure()
+      if: env.SECRETS_FOUND == 'true'
       id: report
       with:
         path: secrets-result.md
 
     - name: Read fingerprint.txt
       uses: guibranco/github-file-reader-action-v2@v2.2.822
-      if: failure()
+      if: env.SECRETS_FOUND == 'true'
       id: fingerprint
       with:
         path: fingerprint.txt
 
     - name: Update PR with comment (success)
       uses: mshick/add-pr-comment@v2
-      if: success() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
+      if: env.SCAN_RAN == 'true' && env.SECRETS_FOUND == 'false' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
@@ -198,9 +245,9 @@ runs:
             ```
           </details>
 
-    - name: Update PR with comment (failure)
+    - name: Update PR with comment (failure - secrets found)
       uses: mshick/add-pr-comment@v2
-      if: failure() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
+      if: env.SECRETS_FOUND == 'true' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
         refresh-message-position: true
@@ -247,6 +294,31 @@ runs:
           > [!TIP]
           > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
 
+    - name: Update PR with comment (tool failure)
+      uses: mshick/add-pr-comment@v2
+      if: (env.FETCH_FAILED == 'true' || env.INSTALL_FAILED == 'true' || env.SCAN_RAN == 'false') && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
+      with:
+        repo-token: ${{ inputs.GH_TOKEN }}
+        refresh-message-position: true
+        message-id: "secrets-result"
+        message: |
+          **Infisical secrets check:** ⚠️ Tool failure - Unable to complete scan!
+
+          > [!WARNING]
+          > The Infisical secrets scan could not be completed due to a tool failure.
+          > This may be due to:
+          > - GitHub API rate limiting when fetching the latest CLI version
+          > - Network issues during CLI download
+          > - CLI execution problems
+          
+          **What to do:**
+          1. **Re-run the workflow** - This is often a temporary issue
+          2. Check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for specific error details
+          3. If the issue persists, please report it to the action maintainer
+
+          > [!NOTE]
+          > This failure does **not** mean secrets were found - the scan simply couldn't run.
+
     - name: Update PR with comment (cancelled)
       uses: mshick/add-pr-comment@v2
       if: cancelled() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
@@ -256,3 +328,17 @@ runs:
         message-id: "secrets-result"
         message: |
           **Infisical secrets check:** ⭕ Secrets check cancelled!
+
+    - name: Fail workflow if secrets found
+      shell: bash
+      if: env.SECRETS_FOUND == 'true'
+      run: |
+        echo "❌ Failing workflow due to secrets found"
+        exit 1
+
+    - name: Fail workflow if tool failed
+      shell: bash
+      if: env.FETCH_FAILED == 'true' || env.INSTALL_FAILED == 'true' || env.SCAN_RAN == 'false'
+      run: |
+        echo "❌ Failing workflow due to tool failure"
+        exit 1
