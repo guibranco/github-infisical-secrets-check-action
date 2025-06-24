@@ -16,29 +16,33 @@
 The following workflow step will scan for secret leaks in your repository.
 
 ```yml
-
-  - name: Infisical Secrets Check
-    id: secrets-scan
-    uses: guibranco/github-infisical-secrets-check-action@v3.0.0
+- name: Infisical Secrets Check
+  id: secrets-scan
+  uses: guibranco/github-infisical-secrets-check-action@v4.0.1
 ```
 
 ---
 
 ## Inputs
 
-- `gh_token`: The GitHub token to add the comment in the PR using the [mshick/add-pr-comment@v2](https://github.com/mshick/add-pr-comment) GitHub Action.
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `GH_TOKEN` | GitHub token to add comments in pull requests | No | `${{ github.TOKEN }}` |
+| `ADD_COMMENT` | Whether to comment results in the pull request | No | `true` |
 
 ---
 
 ## Outputs
 
-- `secrets-leaked`: The number of secrets leaked found by the Infisical CLI tool.
+| Output | Description |
+|--------|-------------|
+| `secrets-leaked` | The number of secrets leaked found by the Infisical CLI tool |
 
 ---
 
-## Example
+## Examples
 
-### With default (inherited) GitHub token
+### Basic usage with default settings
 
 ```yml
 name: Infisical secrets check
@@ -51,13 +55,14 @@ jobs:
   secrets-check:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v3.0.0
+        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
 ```
 
-### With a custom GitHub token
+### With custom GitHub token
 
 ```yml
 name: Infisical secrets check
@@ -70,19 +75,69 @@ jobs:
   secrets-check:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v3.0.0
+        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
         with:
-          gh_token: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.CUSTOM_GH_TOKEN }}
 ```
 
-Remember to add the repository secret `GH_TOKEN`.
+Remember to add the repository secret `CUSTOM_GH_TOKEN`.
+
+### Disable PR comments
+
+```yml
+name: Infisical secrets check
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Infisical Secrets Check
+        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+        with:
+          ADD_COMMENT: false
+```
+
+### Using outputs in subsequent steps
+
+```yml
+name: Infisical secrets check
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  secrets-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Infisical Secrets Check
+        id: secrets-scan
+        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+        
+      - name: Handle secrets found
+        if: steps.secrets-scan.outputs.secrets-leaked > 0
+        run: |
+          echo "Found ${{ steps.secrets-scan.outputs.secrets-leaked }} leaked secrets!"
+          # Add your custom handling logic here
+```
 
 ---
 
-## Sample output
+## Sample outputs
 
 ### Success - ✅ No secrets leaked
 
@@ -91,3 +146,56 @@ Remember to add the repository secret `GH_TOKEN`.
 ### Failure - 🚨 Secrets leaked!
 
 ![failure](failure.png)
+
+### Tool Failure - ⚠️ Unable to complete scan
+
+When the Infisical CLI fails to run (due to network issues, API rate limiting, etc.), the action will post a clear error message:
+
+- Explains that this is a tool failure, not a security issue
+- Provides suggestions for resolution (re-run workflow, check logs)
+- Includes a link to workflow logs for debugging
+- Clarifies that the failure doesn't mean secrets were found
+
+---
+
+## Features
+
+- 🔍 **Comprehensive Scanning**: Uses the latest Infisical CLI to scan for secrets in your repository
+- 💬 **Smart PR Comments**: Automatically adds detailed comments to pull requests with scan results
+- 📊 **Detailed Reports**: Provides CSV and Markdown reports of found secrets
+- 🔒 **Fork-Safe**: Safely handles pull requests from forks by disabling comments
+- ⚡ **Efficient Caching**: Caches CLI downloads and dependencies for faster runs
+- 🛡️ **Robust Error Handling**: Distinguishes between tool failures and actual security issues
+- 📝 **Actionable Guidance**: Provides clear next steps for different scenarios
+- 🔧 **Configurable**: Customize token usage and comment behavior
+
+---
+
+## Error Handling
+
+Version 4 introduces improved error handling that prevents confusing empty comments:
+
+- **Tool Installation Failures**: Clear messages when CLI download or installation fails
+- **API Rate Limiting**: Graceful handling of GitHub API limits
+- **Network Issues**: Proper detection and reporting of connectivity problems
+- **Scan Execution Errors**: Distinguishes between tool failures and secrets detection
+
+The action will fail the workflow appropriately, providing users with meaningful feedback on what went wrong and how to resolve it.
+
+---
+
+## Permissions
+
+The action requires the following permissions:
+
+```yml
+permissions:
+  contents: read        # Required to checkout and scan the repository
+  pull-requests: write  # Required to add comments to PRs
+```
+
+---
+
+## Ignoring False Positives
+
+If the scan detects false positives, you can ignore them by creating a `.infisicalignore` file in your repository root with the secret fingerprints provided in the scan results.
