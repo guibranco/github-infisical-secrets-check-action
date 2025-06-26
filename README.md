@@ -18,7 +18,7 @@ The following workflow step will scan for secret leaks in your repository.
 ```yml
 - name: Infisical Secrets Check
   id: secrets-scan
-  uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+  uses: guibranco/github-infisical-secrets-check-action@v4.1.0
 ```
 
 ---
@@ -59,10 +59,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
 ```
 
-### With custom GitHub token
+### With a custom GitHub token
 
 ```yml
 name: Infisical secrets check
@@ -79,7 +79,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
         with:
           GH_TOKEN: ${{ secrets.CUSTOM_GH_TOKEN }}
 ```
@@ -103,7 +103,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
         with:
           ADD_COMMENT: false
 ```
@@ -126,7 +126,7 @@ jobs:
     steps:
       - name: Infisical Secrets Check
         id: secrets-scan
-        uses: guibranco/github-infisical-secrets-check-action@v4.0.1
+        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
         
       - name: Handle secrets found
         if: steps.secrets-scan.outputs.secrets-leaked > 0
