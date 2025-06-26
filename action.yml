@@ -50,25 +50,51 @@ runs:
         restore-keys: |
           ${{ runner.os }}-npm-
 
-    - name: Get latest Infisical CLI version
+    - name: Get latest valid Infisical CLI version
       id: infisical-version
       shell: bash
       run: |
-        echo "🔍 Fetching latest Infisical CLI version..."
-        JSON=$(curl -s https://api.github.com/repos/Infisical/infisical/releases/latest)
-        TAG_NAME=$(echo "$JSON" | jq -r '.tag_name')
+        echo "🔍 Fetching latest valid Infisical CLI version..."
+        
+        # Fetch all releases (up to 30 most recent)
+        JSON=$(curl -s "https://api.github.com/repos/Infisical/infisical/releases?per_page=30")
         
         # Check if we got a valid response
-        if [[ "$TAG_NAME" == "null" || -z "$TAG_NAME" ]]; then
-          echo "❌ Failed to fetch latest version from GitHub API"
+        if [[ "$JSON" == "null" || -z "$JSON" || "$JSON" == "[]" ]]; then
+          echo "❌ Failed to fetch releases from GitHub API"
           echo "Response: $JSON"
           echo "FETCH_FAILED=true" >> $GITHUB_ENV
           exit 1
         fi
         
+        # Find the first release that matches our criteria:
+        # 1. Tag name starts with "infisical-cli/v"
+        # 2. Tag name does not contain "-postgres"
+        # 3. Is not a prerelease
+        # 4. Is not a draft
+        TAG_NAME=$(echo "$JSON" | jq -r '
+          .[] | 
+          select(.draft == false) |
+          select(.prerelease == false) |
+          select(.tag_name | startswith("infisical-cli/v")) |
+          select(.tag_name | contains("-postgres") | not) |
+          .tag_name |
+          select(. != null)' | head -n1)
+        
+        # Check if we found a valid tag
+        if [[ "$TAG_NAME" == "null" || -z "$TAG_NAME" ]]; then
+          echo "❌ No valid Infisical CLI release found"
+          echo "Available releases:"
+          echo "$JSON" | jq -r '.[] | select(.draft == false) | .tag_name' | head -10
+          echo "FETCH_FAILED=true" >> $GITHUB_ENV
+          exit 1
+        fi
+        
+        # Extract version from tag (remove "infisical-cli/v" prefix)
         VERSION=$(echo "$TAG_NAME" | sed 's|infisical-cli/v||')
-        echo "🔍 Latest version: $VERSION"
+        echo "🔍 Found valid CLI version: $VERSION (tag: $TAG_NAME)"
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
         echo "FETCH_FAILED=false" >> $GITHUB_ENV
 
     - name: Cache Infisical CLI
@@ -84,9 +110,11 @@ runs:
       shell: bash
       run: |
         VERSION=${{ steps.infisical-version.outputs.version }}
-        TAG_NAME="infisical-cli/v$VERSION"
+        TAG_NAME=${{ steps.infisical-version.outputs.tag_name }}
         ASSET="infisical_${VERSION}_linux_amd64.tar.gz"
-        URL="https://github.com/Infisical/infisical/releases/download/${TAG_NAME//\//%2F}/$ASSET"
+        # URL encode the tag name for the download URL
+        ENCODED_TAG=$(echo "$TAG_NAME" | sed 's|/|%2F|g')
+        URL="https://github.com/Infisical/infisical/releases/download/$ENCODED_TAG/$ASSET"
 
         echo "⬇️ Downloading Infisical CLI $VERSION from $URL"
         mkdir -p .tools/infisical
@@ -94,6 +122,8 @@ runs:
         # Download and verify
         if ! curl -sL "$URL" | tar -xz -C .tools/infisical; then
           echo "❌ Failed to download or extract Infisical CLI"
+          echo "❌ URL attempted: $URL"
+          echo "❌ Asset expected: $ASSET"
           echo "INSTALL_FAILED=true" >> $GITHUB_ENV
           exit 1
         fi
