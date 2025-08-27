@@ -57,7 +57,7 @@ runs:
         echo "🔍 Fetching latest valid Infisical CLI version..."
         
         # Fetch all releases (up to 30 most recent)
-        JSON=$(curl -s "https://api.github.com/repos/Infisical/infisical/releases?per_page=30")
+        JSON=$(curl -s "https://api.github.com/repos/Infisical/infisical/releases?per_page=50")
         
         # Check if we got a valid response
         if [[ "$JSON" == "null" || -z "$JSON" || "$JSON" == "[]" ]]; then
