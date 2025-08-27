@@ -1,0 +1,87 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  bats-matrix:
+    name: Bats tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Bats
+        if: matrix.os != 'windows-latest'
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y bats || brew install bats-core
+      - name: Set up Bats (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install bats    
+      - name: Run Bats tests
+        run: bats tests/test_action.bats
+
+  coverage:
+    name: Coverage (kcov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kcov
+        run: sudo apt-get update && sudo apt-get install -y kcov
+      - name: Run Bats with coverage
+        run: |
+          kcov --include-path=. coverage bats tests/test_action.bats || true
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+  gh-tests:
+    name: Native GitHub Action tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Safe repo test
+        id: safe
+        run: |
+          mkdir safe-repo && cd safe-repo
+          git init -q
+          echo "hello world" > file.txt
+          git add file.txt
+          git commit -m "Initial commit" -q
+      - name: Run action (safe)
+        id: run-safe
+        uses: ./
+        with:
+          path: safe-repo
+        continue-on-error: false
+      - name: Assert safe output
+        run: |
+          echo "secrets-leaked=${{ steps.run-safe.outputs.secrets-leaked }}"
+          test "${{ steps.run-safe.outputs.secrets-leaked }}" = "0"
+
+      - name: Leaky repo test
+        id: leaky
+        run: |
+          mkdir leaky-repo && cd leaky-repo
+          git init -q
+          echo "FAKE_SECRET=abcd1234abcd1234abcd1234abcd1234" > .env
+          git add .env
+          git commit -m "Add fake secret" -q
+      - name: Run action (leaky)
+        id: run-leaky
+        uses: ./
+        with:
+          path: leaky-repo
+        continue-on-error: true
+      - name: Assert leaky output
+        run: |
+          echo "secrets-leaked=${{ steps.run-leaky.outputs.secrets-leaked }}"
+          test "${{ steps.run-leaky.outputs.secrets-leaked }}" -gt 0
