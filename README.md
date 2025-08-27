@@ -5,6 +5,7 @@
 [![GitHub license](https://img.shields.io/github/license/guibranco/github-infisical-secrets-check-action?color=green&logo=github&style=plastic&label=License)](https://github.com/guibranco/github-infisical-secrets-check-action "shields.io")
 
 ![CI](https://github.com/guibranco/github-infisical-secrets-check-action/actions/workflows/ci.yml/badge.svg)
+![Test](https://github.com/guibranco/github-infisical-secrets-check-action/actions/workflows/test.yml/badge.svg)
 [![wakatime](https://wakatime.com/badge/github/guibranco/github-infisical-secrets-check-action.svg)](https://wakatime.com/badge/github/guibranco/github-infisical-secrets-check-action)
 
 🚨 :octocat: A GitHub action to check and report secret leaks in the repository using [Infisical CLI](https://infisical.com/docs/cli/commands/scan).
