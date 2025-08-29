@@ -20,8 +20,8 @@ jobs:
           ADD_COMMENT: false
 
       - name: Show output
-        run: echo "Secrets leaked: ${{ steps.secrets.outputs.secrets-leaked }}"
-
+        run: |
+          echo "Secrets leaked: ${{ steps.secrets.outputs['secrets-leaked'] }}"
       - name: Validate action result
         run: |
           if [ "${{ steps.secrets.outputs.secrets-leaked }}" != "0" ]; then
