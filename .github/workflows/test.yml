@@ -14,7 +14,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Bats
         if: matrix.os != 'windows-latest'
         run: |
@@ -31,7 +31,7 @@ jobs:
     name: Coverage (kcov)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install kcov
         run: sudo apt-get update && sudo apt-get install -y kcov
       - name: Run Bats with coverage
@@ -47,7 +47,7 @@ jobs:
     name: Native GitHub Action tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Safe repo test
         id: safe
         run: |
