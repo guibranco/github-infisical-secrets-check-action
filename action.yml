@@ -68,7 +68,7 @@ runs:
         fi
         
         # Find the first release that matches our criteria:
-        # 1. Tag name starts with "infisical-cli/v"
+        # 1. Tag name starts with "v"
         # 2. Tag name does not contain "-postgres"
         # 3. Is not a prerelease
         # 4. Is not a draft
@@ -76,7 +76,7 @@ runs:
           .[] | 
           select(.draft == false) |
           select(.prerelease == false) |
-          select(.tag_name | startswith("infisical-cli/v")) |
+          select(.tag_name | startswith("v")) |
           select(.tag_name | contains("-postgres") | not) |
           .tag_name |
           select(. != null)' | head -n1)
@@ -90,8 +90,8 @@ runs:
           exit 1
         fi
         
-        # Extract version from tag (remove "infisical-cli/v" prefix)
-        VERSION=$(echo "$TAG_NAME" | sed 's|infisical-cli/v||')
+        # Extract version from tag (remove "v" prefix)
+        VERSION=$(echo "$TAG_NAME" | sed 's|v||')
         echo "🔍 Found valid CLI version: $VERSION (tag: $TAG_NAME)"
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
         echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
