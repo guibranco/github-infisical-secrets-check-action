@@ -111,10 +111,9 @@ runs:
       run: |
         VERSION=${{ steps.infisical-version.outputs.version }}
         TAG_NAME=${{ steps.infisical-version.outputs.tag_name }}
-        ASSET="v${VERSION}.tar.gz"
         # URL encode the tag name for the download URL
         ENCODED_TAG=$(echo "$TAG_NAME" | sed 's|/|%2F|g')
-        URL="https://github.com/Infisical/infisical/releases/download/$ENCODED_TAG/$ASSET"
+        URL="https://api.github.com/repos/Infisical/infisical/tarball/v$VERSION"
 
         echo "⬇️ Downloading Infisical CLI $VERSION from $URL"
         mkdir -p .tools/infisical
