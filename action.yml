@@ -237,21 +237,21 @@ runs:
         path: fingerprint.txt
 
     - name: Read secrets-result.log
-      uses: guibranco/github-file-reader-action-v2@v2.2.861
+      uses: guibranco/github-file-reader-action-v2@v2.2.865
       if: always() && env.SCAN_RAN == 'true'
       id: log
       with:
         path: secrets-result.log
 
     - name: Read secrets-result.md
-      uses: guibranco/github-file-reader-action-v2@v2.2.861
+      uses: guibranco/github-file-reader-action-v2@v2.2.865
       if: env.SECRETS_FOUND == 'true'
       id: report
       with:
         path: secrets-result.md
 
     - name: Read fingerprint.txt
-      uses: guibranco/github-file-reader-action-v2@v2.2.861
+      uses: guibranco/github-file-reader-action-v2@v2.2.865
       if: env.SECRETS_FOUND == 'true'
       id: fingerprint
       with:
