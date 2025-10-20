@@ -57,7 +57,7 @@ runs:
         echo "🔍 Fetching latest valid Infisical CLI version..."
         
         # Fetch all releases (up to 30 most recent)
-        JSON=$(curl -s "https://api.github.com/repos/Infisical/infisical/releases?per_page=100")
+        JSON=$(curl -s "https://api.github.com/repos/Infisical/cli/releases?per_page=100")
         
         # Check if we got a valid response
         if [[ "$JSON" == "null" || -z "$JSON" || "$JSON" == "[]" ]]; then
@@ -111,9 +111,10 @@ runs:
       run: |
         VERSION=${{ steps.infisical-version.outputs.version }}
         TAG_NAME=${{ steps.infisical-version.outputs.tag_name }}
+        ASSET="cli_${VERSION}_linux_amd64.tar.gz"
         # URL encode the tag name for the download URL
         ENCODED_TAG=$(echo "$TAG_NAME" | sed 's|/|%2F|g')
-        URL="https://api.github.com/repos/Infisical/infisical/tarball/v$VERSION"
+        URL="https://github.com/Infisical/cli/releases/download/$ENCODED_TAG/$ASSET"
 
         echo "⬇️ Downloading Infisical CLI $VERSION from $URL"
         mkdir -p .tools/infisical
