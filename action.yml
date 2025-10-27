@@ -201,14 +201,14 @@ runs:
         echo "secrets-leaked=$quantity" >> $GITHUB_OUTPUT
 
     - name: Upload artifacts secrets-result.log
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: always() && env.SCAN_RAN == 'true'
       with:
         name: report-log
         path: secrets-result.log
 
     - name: Upload artifacts secrets.csv
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: env.SECRETS_FOUND == 'true'
       id: secrets
       with:
@@ -216,21 +216,21 @@ runs:
         path: secrets.csv
 
     - name: Upload artifacts secrets-result.csv
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: env.SECRETS_FOUND == 'true'
       with:
         name: report-csv
         path: secrets-result.csv
 
     - name: Upload artifacts secrets-result.md
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: env.SECRETS_FOUND == 'true'
       with:
         name: report-md
         path: secrets-result.md
 
     - name: Upload artifacts fingerprint.txt
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       if: env.SECRETS_FOUND == 'true'
       with:
         name: fingerprint-txt
