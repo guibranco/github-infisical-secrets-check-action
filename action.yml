@@ -35,7 +35,7 @@ runs:
         fetch-depth: 0
 
     - name: Cache pip packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-csvkit-v1
@@ -43,7 +43,7 @@ runs:
           ${{ runner.os }}-pip-
 
     - name: Cache npm global packages
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ~/.cache/npm
         key: ${{ runner.os }}-npm-csv2md-v1
@@ -98,7 +98,7 @@ runs:
         echo "FETCH_FAILED=false" >> $GITHUB_ENV
 
     - name: Cache Infisical CLI
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       id: infisical-cache
       if: env.FETCH_FAILED != 'true'
       with:
