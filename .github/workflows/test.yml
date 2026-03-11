@@ -64,6 +64,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+  
+      - name: Configure git
+        run: |
+          git config --global user.email "ci@test.local"
+          git config --global user.name "GitHub Actions"
+  
       - name: Safe repo test
         id: safe
         run: |
@@ -72,17 +78,18 @@ jobs:
           echo "hello world" > file.txt
           git add file.txt
           git commit -m "Initial commit" -q
+  
       - name: Run action (safe)
         id: run-safe
         uses: ./
         with:
           path: safe-repo
-        continue-on-error: false
+  
       - name: Assert safe output
         run: |
           echo "secrets-leaked=${{ steps.run-safe.outputs.secrets-leaked }}"
           test "${{ steps.run-safe.outputs.secrets-leaked }}" = "0"
-
+  
       - name: Leaky repo test
         id: leaky
         run: |
@@ -91,12 +98,14 @@ jobs:
           echo "FAKE_SECRET=abcd1234abcd1234abcd1234abcd1234" > .env
           git add .env
           git commit -m "Add fake secret" -q
+  
       - name: Run action (leaky)
         id: run-leaky
         uses: ./
         with:
           path: leaky-repo
         continue-on-error: true
+  
       - name: Assert leaky output
         run: |
           echo "secrets-leaked=${{ steps.run-leaky.outputs.secrets-leaked }}"
