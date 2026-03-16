@@ -258,7 +258,7 @@ runs:
         path: fingerprint.txt
 
     - name: Update PR with comment (success)
-      uses: mshick/add-pr-comment@v2
+      uses: mshick/add-pr-comment@v3
       if: env.SCAN_RAN == 'true' && env.SECRETS_FOUND == 'false' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
@@ -276,7 +276,7 @@ runs:
           </details>
 
     - name: Update PR with comment (failure - secrets found)
-      uses: mshick/add-pr-comment@v2
+      uses: mshick/add-pr-comment@v3
       if: env.SECRETS_FOUND == 'true' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
@@ -325,7 +325,7 @@ runs:
           > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
 
     - name: Update PR with comment (tool failure)
-      uses: mshick/add-pr-comment@v2
+      uses: mshick/add-pr-comment@v3
       if: (env.FETCH_FAILED == 'true' || env.INSTALL_FAILED == 'true' || env.SCAN_RAN == 'false') && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
@@ -350,7 +350,7 @@ runs:
           > This failure does **not** mean secrets were found - the scan simply couldn't run.
 
     - name: Update PR with comment (cancelled)
-      uses: mshick/add-pr-comment@v2
+      uses: mshick/add-pr-comment@v3
       if: cancelled() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
