@@ -19,24 +19,24 @@ The following workflow step will scan for secret leaks in your repository.
 ```yml
 - name: Infisical Secrets Check
   id: secrets-scan
-  uses: guibranco/github-infisical-secrets-check-action@v4.1.0
-```
+  uses: guibranco/github-infisical-secrets-check-action@v5.0.1
+````
 
 ---
 
 ## Inputs
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `GH_TOKEN` | GitHub token to add comments in pull requests | No | `${{ github.TOKEN }}` |
-| `ADD_COMMENT` | Whether to comment results in the pull request | No | `true` |
+| Input         | Description                                    | Required | Default               |
+| ------------- | ---------------------------------------------- | -------- | --------------------- |
+| `GH_TOKEN`    | GitHub token to add comments in pull requests  | No       | `${{ github.TOKEN }}` |
+| `ADD_COMMENT` | Whether to comment results in the pull request | No       | `true`                |
 
 ---
 
 ## Outputs
 
-| Output | Description |
-|--------|-------------|
+| Output           | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
 | `secrets-leaked` | The number of secrets leaked found by the Infisical CLI tool |
 
 ---
@@ -60,8 +60,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
+        uses: guibranco/github-infisical-secrets-check-action@v5.0.1
 ```
+
+---
 
 ### With a custom GitHub token
 
@@ -80,12 +82,14 @@ jobs:
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
+        uses: guibranco/github-infisical-secrets-check-action@v5.0.1
         with:
           GH_TOKEN: ${{ secrets.CUSTOM_GH_TOKEN }}
 ```
 
 Remember to add the repository secret `CUSTOM_GH_TOKEN`.
+
+---
 
 ### Disable PR comments
 
@@ -104,10 +108,12 @@ jobs:
       pull-requests: write
     steps:
       - name: Infisical Secrets Check
-        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
+        uses: guibranco/github-infisical-secrets-check-action@v5.0.1
         with:
           ADD_COMMENT: false
 ```
+
+---
 
 ### Using outputs in subsequent steps
 
@@ -127,7 +133,7 @@ jobs:
     steps:
       - name: Infisical Secrets Check
         id: secrets-scan
-        uses: guibranco/github-infisical-secrets-check-action@v4.1.0
+        uses: guibranco/github-infisical-secrets-check-action@v5.0.1
         
       - name: Handle secrets found
         if: steps.secrets-scan.outputs.secrets-leaked > 0
@@ -144,44 +150,65 @@ jobs:
 
 ![success](success.png)
 
+---
+
 ### Failure - 🚨 Secrets leaked!
 
+Version 5 introduces an improved remediation workflow:
+
+When secrets are detected, the action now:
+
+* Shows detected fingerprints
+* Generates `.infisicalignore` update suggestions
+* Provides a **Commit suggestion button directly inside the PR comment**
+* Automatically creates or updates `.infisicalignore`
+* Prevents duplicate fingerprints
+
+This allows contributors to fix false positives **without leaving the pull request UI**.
+
 ![failure](failure.png)
+
+---
 
 ### Tool Failure - ⚠️ Unable to complete scan
 
 When the Infisical CLI fails to run (due to network issues, API rate limiting, etc.), the action will post a clear error message:
 
-- Explains that this is a tool failure, not a security issue
-- Provides suggestions for resolution (re-run workflow, check logs)
-- Includes a link to workflow logs for debugging
-- Clarifies that the failure doesn't mean secrets were found
+* Explains that this is a tool failure, not a security issue
+* Provides suggestions for resolution (re-run workflow, check logs)
+* Includes a link to workflow logs for debugging
+* Clarifies that the failure doesn't mean secrets were found
 
 ---
 
 ## Features
 
-- 🔍 **Comprehensive Scanning**: Uses the latest Infisical CLI to scan for secrets in your repository
-- 💬 **Smart PR Comments**: Automatically adds detailed comments to pull requests with scan results
-- 📊 **Detailed Reports**: Provides CSV and Markdown reports of found secrets
-- 🔒 **Fork-Safe**: Safely handles pull requests from forks by disabling comments
-- ⚡ **Efficient Caching**: Caches CLI downloads and dependencies for faster runs
-- 🛡️ **Robust Error Handling**: Distinguishes between tool failures and actual security issues
-- 📝 **Actionable Guidance**: Provides clear next steps for different scenarios
-- 🔧 **Configurable**: Customize token usage and comment behavior
+* 🔍 **Comprehensive scanning** using the latest Infisical CLI
+* 💬 **Smart PR comments** with structured scan results
+* 🧠 **Interactive remediation workflow (new in v5)** with commit suggestion support
+* 📝 **Automatic `.infisicalignore` generation/update suggestions**
+* 🧹 **Duplicate fingerprint prevention**
+* 📊 **Detailed CSV and Markdown reports**
+* 🔒 **Fork-safe execution**
+* ⚡ **Efficient dependency caching**
+* 🛡️ **Robust failure detection and reporting**
+* 📎 **Workflow-friendly outputs**
+* 🔧 **Configurable comment behavior**
 
 ---
 
 ## Error Handling
 
-Version 4 introduces improved error handling that prevents confusing empty comments:
+Version 4 introduced improved error handling that prevents confusing empty comments.
 
-- **Tool Installation Failures**: Clear messages when CLI download or installation fails
-- **API Rate Limiting**: Graceful handling of GitHub API limits
-- **Network Issues**: Proper detection and reporting of connectivity problems
-- **Scan Execution Errors**: Distinguishes between tool failures and secrets detection
+Version 5 builds on this by improving remediation guidance:
 
-The action will fail the workflow appropriately, providing users with meaningful feedback on what went wrong and how to resolve it.
+* Generates commit suggestions for ignore rules
+* Prevents duplicate ignore entries
+* Improces PR workflow ergonomics
+* Keeps scan failures clearly separated from security failures
+
+The action will fail the workflow appropriately, providing meaningful feedback on what went wrong and how to resolve it.
 
 ---
 
@@ -191,12 +218,33 @@ The action requires the following permissions:
 
 ```yml
 permissions:
-  contents: read        # Required to checkout and scan the repository
-  pull-requests: write  # Required to add comments to PRs
+  contents: read
+  pull-requests: write
 ```
 
 ---
 
 ## Ignoring False Positives
 
-If the scan detects false positives, you can ignore them by creating a `.infisicalignore` file in your repository root with the secret fingerprints provided in the scan results.
+If the scan detects false positives:
+
+Version 5 allows you to fix them directly from the PR comment.
+
+The action now automatically:
+
+1. Detects whether `.infisicalignore` exists
+2. Creates the file if missing
+3. Appends fingerprints if present
+4. Removes duplicates automatically
+5. Generates a **Commit suggestion button**
+
+Simply click the suggestion button inside the PR comment to apply the ignore list instantly.
+
+Manual fallback (still supported):
+
+Create a `.infisicalignore` file at repository root:
+
+```
+fingerprint_value_here
+another_fingerprint_here
+```
