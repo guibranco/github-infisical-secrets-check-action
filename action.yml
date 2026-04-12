@@ -278,6 +278,43 @@ runs:
       with:
         path: fingerprint.txt
 
+    - name: Check if .infisicalignore exists
+      id: ignorefile
+      shell: bash
+      if: env.SECRETS_FOUND == 'true'
+      run: |
+        if [[ -f ".infisicalignore" ]]; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Prepare ignore file suggestion
+      id: ignore_suggestion
+      shell: bash
+      if: env.SECRETS_FOUND == 'true'
+      run: |
+        echo "Preparing suggestion block..."
+
+        if [[ "${{ steps.ignorefile.outputs.exists }}" == "true" ]]; then
+          echo "Appending fingerprints to existing .infisicalignore"
+          cat .infisicalignore > new-ignorefile.txt
+          echo "" >> new-ignorefile.txt
+          cat fingerprint.txt >> new-ignorefile.txt
+        else
+          echo "Creating new .infisicalignore"
+          cat fingerprint.txt > new-ignorefile.txt
+        fi
+
+        # Remove duplicates (optional improvement)
+        sort -u new-ignorefile.txt -o new-ignorefile.txt
+
+        echo "suggestion<<EOF" >> $GITHUB_OUTPUT
+        echo '```suggestion:.infisicalignore' >> $GITHUB_OUTPUT
+        cat new-ignorefile.txt >> $GITHUB_OUTPUT
+        echo '```' >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
     - name: Update PR with comment (success)
       uses: mshick/add-pr-comment@v3
       if: env.SCAN_RAN == 'true' && env.SECRETS_FOUND == 'false' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
@@ -343,7 +380,9 @@ runs:
           </details>
 
           > [!TIP]
-          > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
+          > You can commit the fingerprint list below to automatically create or update `.infisicalignore`:
+
+          ${{ steps.ignore_suggestion.outputs.suggestion }}
 
     - name: Update PR with comment (tool failure)
       uses: mshick/add-pr-comment@v3
