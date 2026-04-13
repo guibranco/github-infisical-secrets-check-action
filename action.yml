@@ -314,7 +314,44 @@ runs:
         cat new-ignorefile.txt >> $GITHUB_OUTPUT
         echo '```' >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create review suggestion for .infisicalignore
+      uses: actions/github-script@v7
+      if: env.SECRETS_FOUND == 'true' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
+      with:
+        github-token: ${{ inputs.GH_TOKEN }}
+        script: |
 
+          const fs = require('fs');
+
+          const suggestion =
+            fs.readFileSync('new-ignorefile.txt', 'utf8');
+
+          const suggestionBlock =
+            "```suggestion:.infisicalignore\n" +
+            suggestion +
+            "\n```";
+
+          const pr = context.payload.pull_request;
+
+          if (!pr) {
+            core.info("Not a PR event — skipping review suggestion.");
+            return;
+          }
+
+          await github.rest.pulls.createReview({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr.number,
+            event: "COMMENT",
+            body:
+              "### Suggested update for `.infisicalignore`\n\n" +
+              "Apply this suggestion to ignore detected fingerprints:\n\n" +
+              suggestionBlock
+          });
+
+          core.info("Review suggestion posted successfully.");    
+    
     - name: Update PR with comment (success)
       uses: mshick/add-pr-comment@v3
       if: env.SCAN_RAN == 'true' && env.SECRETS_FOUND == 'false' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
@@ -380,9 +417,7 @@ runs:
           </details>
 
           > [!TIP]
-          > You can commit the fingerprint list below to automatically create or update `.infisicalignore`:
-
-          ${{ steps.ignore_suggestion.outputs.suggestion }}
+          > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
 
     - name: Update PR with comment (tool failure)
       uses: mshick/add-pr-comment@v3
