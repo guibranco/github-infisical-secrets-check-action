@@ -316,7 +316,7 @@ runs:
         echo "EOF" >> $GITHUB_OUTPUT
     
     - name: Create review suggestion for .infisicalignore
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       if: env.SECRETS_FOUND == 'true' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         github-token: ${{ inputs.GH_TOKEN }}
