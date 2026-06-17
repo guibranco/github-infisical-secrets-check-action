@@ -65,7 +65,7 @@ runs:
         sudo apt-get update -qq
 
         echo "🔍 Fetching latest Infisical CLI version from apt..."
-        VERSION=$(apt-cache show infisical 2>/dev/null | grep "^Version:" | head -1 | awk '{print $2}')
+        VERSION=$(apt-cache show infisical 2>/dev/null | awk '/^Version:/{print $2; exit}')
         if [[ -z "$VERSION" ]]; then
           echo "❌ Failed to get infisical version from apt"
           echo "FETCH_FAILED=true" >> $GITHUB_ENV
