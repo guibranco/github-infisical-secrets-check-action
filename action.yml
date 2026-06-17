@@ -64,10 +64,20 @@ runs:
         echo "🔄 Updating apt package lists..."
         sudo apt-get update -qq
 
-        echo "🔍 Fetching latest Infisical CLI version from apt..."
-        VERSION=$(apt-cache show infisical 2>/dev/null | grep "^Version:" | head -1 | awk '{print $2}')
+        echo "⬇️ Installing Infisical CLI..."
+        if ! sudo apt-get install -y infisical; then
+          echo "❌ Failed to install Infisical CLI"
+          echo "FETCH_FAILED=true" >> $GITHUB_ENV
+          exit 1
+        fi
+
+        echo "🔍 Fetching installed Infisical CLI version..."
+        VERSION=$(infisical --version 2>&1 | awk '{print $NF; exit}')
         if [[ -z "$VERSION" ]]; then
-          echo "❌ Failed to get infisical version from apt"
+          VERSION=$(dpkg-query -W -f='${Version}' infisical 2>/dev/null)
+        fi
+        if [[ -z "$VERSION" ]]; then
+          echo "❌ Failed to get infisical version"
           echo "FETCH_FAILED=true" >> $GITHUB_ENV
           exit 1
         fi
@@ -75,6 +85,11 @@ runs:
         echo "✅ Found infisical version: $VERSION"
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
         echo "FETCH_FAILED=false" >> $GITHUB_ENV
+
+        mkdir -p .tools/infisical
+        cp "$(which infisical)" .tools/infisical/infisical
+        chmod +x .tools/infisical/infisical
+
     - name: Cache Infisical CLI
       uses: actions/cache@v5
       id: infisical-cache
