@@ -30,12 +30,12 @@ runs:
         fi
 
     - name: Checkout repo
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0
 
     - name: Cache pip packages
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-csvkit-v1
@@ -43,7 +43,7 @@ runs:
           ${{ runner.os }}-pip-
 
     - name: Cache npm global packages
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/npm
         key: ${{ runner.os }}-npm-csv2md-v1
@@ -91,7 +91,7 @@ runs:
         chmod +x .tools/infisical/infisical
 
     - name: Cache Infisical CLI
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: infisical-cache
       if: env.FETCH_FAILED != 'true'
       with:
@@ -184,14 +184,14 @@ runs:
         echo "secrets-leaked=$quantity" >> $GITHUB_OUTPUT
 
     - name: Upload artifacts secrets-result.log
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: always() && env.SCAN_RAN == 'true'
       with:
         name: report-log
         path: secrets-result.log
 
     - name: Upload artifacts secrets.csv
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: env.SECRETS_FOUND == 'true'
       id: secrets
       with:
@@ -199,42 +199,42 @@ runs:
         path: secrets.csv
 
     - name: Upload artifacts secrets-result.csv
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: env.SECRETS_FOUND == 'true'
       with:
         name: report-csv
         path: secrets-result.csv
 
     - name: Upload artifacts secrets-result.md
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: env.SECRETS_FOUND == 'true'
       with:
         name: report-md
         path: secrets-result.md
 
     - name: Upload artifacts fingerprint.txt
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: env.SECRETS_FOUND == 'true'
       with:
         name: fingerprint-txt
         path: fingerprint.txt
 
     - name: Read secrets-result.log
-      uses: guibranco/github-file-reader-action-v2@v2.3.68
+      uses: guibranco/github-file-reader-action-v2@f297f780ca1a7011607da50f6cc003ae3fbc8ed1 # v2.3.68
       if: always() && env.SCAN_RAN == 'true'
       id: log
       with:
         path: secrets-result.log
 
     - name: Read secrets-result.md
-      uses: guibranco/github-file-reader-action-v2@v2.3.68
+      uses: guibranco/github-file-reader-action-v2@f297f780ca1a7011607da50f6cc003ae3fbc8ed1 # v2.3.68
       if: env.SECRETS_FOUND == 'true'
       id: report
       with:
         path: secrets-result.md
 
     - name: Read fingerprint.txt
-      uses: guibranco/github-file-reader-action-v2@v2.3.68
+      uses: guibranco/github-file-reader-action-v2@f297f780ca1a7011607da50f6cc003ae3fbc8ed1 # v2.3.68
       if: env.SECRETS_FOUND == 'true'
       id: fingerprint
       with:
@@ -278,7 +278,7 @@ runs:
         echo "EOF" >> $GITHUB_OUTPUT
     
     - name: Create review suggestion for .infisicalignore
-      uses: actions/github-script@v9
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       if: env.SECRETS_FOUND == 'true' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         github-token: ${{ inputs.GH_TOKEN }}
@@ -315,7 +315,7 @@ runs:
           core.info("Review suggestion posted successfully.");    
     
     - name: Update PR with comment (success)
-      uses: mshick/add-pr-comment@v3
+      uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0
       if: env.SCAN_RAN == 'true' && env.SECRETS_FOUND == 'false' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
@@ -333,7 +333,7 @@ runs:
           </details>
 
     - name: Update PR with comment (failure - secrets found)
-      uses: mshick/add-pr-comment@v3
+      uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0
       if: env.SECRETS_FOUND == 'true' && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
@@ -382,7 +382,7 @@ runs:
           > If you want to ignore these leaked secrets, add the above **fingerprint** content to a file named `.infisicalignore` at the repository root level.
 
     - name: Update PR with comment (tool failure)
-      uses: mshick/add-pr-comment@v3
+      uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0
       if: (env.FETCH_FAILED == 'true' || env.INSTALL_FAILED == 'true' || env.SCAN_RAN == 'false') && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
@@ -407,7 +407,7 @@ runs:
           > This failure does **not** mean secrets were found - the scan simply couldn't run.
 
     - name: Update PR with comment (cancelled)
-      uses: mshick/add-pr-comment@v3
+      uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # v3.12.0
       if: cancelled() && env.FORKED == 'false' && inputs.ADD_COMMENT == 'true'
       with:
         repo-token: ${{ inputs.GH_TOKEN }}
