@@ -159,26 +159,7 @@ runs:
             echo "🚨 Secrets detected, generating report..."
             
             # Redact the secret values before they reach any report or artifact
-            python3 - <<'PY'
-            import csv
-
-            with open("secrets-result-raw.csv", newline="", encoding="utf-8") as src:
-                reader = csv.DictReader(src)
-                rows = list(reader)
-                fieldnames = reader.fieldnames
-
-            for row in rows:
-                secret = row.get("Secret") or ""
-                if secret and row.get("Match"):
-                    row["Match"] = row["Match"].replace(secret, "REDACTED")
-                if "Secret" in row:
-                    row["Secret"] = "REDACTED"
-
-            with open("secrets-result-redacted.csv", "w", newline="", encoding="utf-8") as dst:
-                writer = csv.DictWriter(dst, fieldnames=fieldnames)
-                writer.writeheader()
-                writer.writerows(rows)
-            PY
+            python3 "$GITHUB_ACTION_PATH/scripts/redact.py" secrets-result-raw.csv secrets-result-redacted.csv
 
             # Process the CSV file
             csvformat -M $'\r' secrets-result-redacted.csv |sed -e ':a' -e 'N;$!ba' -e 's/\n/\\n/g' | tr '\r' '\n' > secrets.csv
