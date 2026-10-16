@@ -59,21 +59,8 @@ jobs:
           allowUpdates: false
           skipIfReleaseExists: true
           draft: false
-          makeLatest: false
-          tag: v${{ steps.gitversion.outputs.semVer }}
-          name: Release v${{ steps.gitversion.outputs.semVer }}
-          generateReleaseNotes: true
-          body:
-            Release ${{ steps.gitversion.outputs.semVer }} of ${{ github.event.repository.name }}
-
-      - name: Create Release (latest)
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
-        with:
-          allowUpdates: true
-          skipIfReleaseExists: false
-          draft: false
           makeLatest: true
-          tag: latest
+          tag: v${{ steps.gitversion.outputs.semVer }}
           name: Release v${{ steps.gitversion.outputs.semVer }}
           generateReleaseNotes: true
           body:
