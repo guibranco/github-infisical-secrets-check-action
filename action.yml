@@ -187,14 +187,14 @@ runs:
         echo "secrets-leaked=$quantity" >> $GITHUB_OUTPUT
 
     - name: Upload artifacts secrets-result.log
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: always() && env.SCAN_RAN == 'true'
       with:
         name: report-log
         path: secrets-result.log
 
     - name: Upload artifacts secrets.csv
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: env.SECRETS_FOUND == 'true'
       id: secrets
       with:
@@ -202,42 +202,42 @@ runs:
         path: secrets.csv
 
     - name: Upload artifacts secrets-result.csv
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: env.SECRETS_FOUND == 'true'
       with:
         name: report-csv
         path: secrets-result.csv
 
     - name: Upload artifacts secrets-result.md
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: env.SECRETS_FOUND == 'true'
       with:
         name: report-md
         path: secrets-result.md
 
     - name: Upload artifacts fingerprint.txt
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: env.SECRETS_FOUND == 'true'
       with:
         name: fingerprint-txt
         path: fingerprint.txt
 
     - name: Read secrets-result.log
-      uses: guibranco/github-file-reader-action-v2@v2.3.72
+      uses: guibranco/github-file-reader-action-v2@v2.3.97
       if: always() && env.SCAN_RAN == 'true'
       id: log
       with:
         path: secrets-result.log
 
     - name: Read secrets-result.md
-      uses: guibranco/github-file-reader-action-v2@v2.3.72
+      uses: guibranco/github-file-reader-action-v2@v2.3.97
       if: env.SECRETS_FOUND == 'true'
       id: report
       with:
         path: secrets-result.md
 
     - name: Read fingerprint.txt
-      uses: guibranco/github-file-reader-action-v2@v2.3.72
+      uses: guibranco/github-file-reader-action-v2@v2.3.97
       if: env.SECRETS_FOUND == 'true'
       id: fingerprint
       with:
