@@ -50,70 +50,49 @@ runs:
         restore-keys: |
           ${{ runner.os }}-npm-
 
-    - name: Get latest valid Infisical CLI version
+    - name: Resolve Infisical CLI version
       id: infisical-version
       shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        CACHE_KEY_PREFIX: ${{ runner.os }}-${{ runner.arch }}-infisical-v
       run: |
-        echo "🔧 Setting up Infisical apt repository..."
-        if ! curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash; then
-          echo "❌ Failed to setup Infisical apt repository"
-          echo "FETCH_FAILED=true" >> $GITHUB_ENV
-          exit 1
-        fi
+        # Never trust anything at the install path that didn't come from the cache.
+        rm -rf .tools/infisical .tools/infisical.staging
+        bash "$GITHUB_ACTION_PATH/scripts/install-infisical.sh" resolve
 
-        echo "🔄 Updating apt package lists..."
-        sudo apt-get update -qq
-
-        echo "⬇️ Installing Infisical CLI..."
-        if ! sudo apt-get install -y infisical; then
-          echo "❌ Failed to install Infisical CLI"
-          echo "FETCH_FAILED=true" >> $GITHUB_ENV
-          exit 1
-        fi
-
-        echo "🔍 Fetching installed Infisical CLI version..."
-        VERSION=$(infisical --version 2>&1 | awk '{print $NF; exit}')
-        if [[ -z "$VERSION" ]]; then
-          VERSION=$(dpkg-query -W -f='${Version}' infisical 2>/dev/null)
-        fi
-        if [[ -z "$VERSION" ]]; then
-          echo "❌ Failed to get infisical version"
-          echo "FETCH_FAILED=true" >> $GITHUB_ENV
-          exit 1
-        fi
-
-        echo "✅ Found infisical version: $VERSION"
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-        echo "FETCH_FAILED=false" >> $GITHUB_ENV
-
-        mkdir -p .tools/infisical
-        cp "$(which infisical)" .tools/infisical/infisical
-        chmod +x .tools/infisical/infisical
-
-    - name: Cache Infisical CLI
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+    - name: Restore Infisical CLI cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       id: infisical-cache
-      if: env.FETCH_FAILED != 'true'
+      if: steps.infisical-version.outputs.version != ''
       with:
         path: .tools/infisical
-        key: ${{ runner.os }}-infisical-v${{ steps.infisical-version.outputs.version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-infisical-v${{ steps.infisical-version.outputs.version }}
+        restore-keys: ${{ steps.infisical-version.outputs.restore-keys }}
 
     - name: Install Infisical CLI if needed
-      if: env.FETCH_FAILED != 'true' && steps.infisical-cache.outputs.cache-hit != 'true'
+      id: infisical-install
+      if: steps.infisical-cache.outputs.cache-hit != 'true'
       shell: bash
+      env:
+        CANDIDATES: ${{ steps.infisical-version.outputs.candidates }}
+        CACHE_RESTORED_KEY: ${{ steps.infisical-cache.outputs.cache-matched-key }}
+        INSTALL_DIR: .tools/infisical
       run: |
-        echo "⬇️ Installing Infisical CLI via apt..."
-        if ! sudo apt-get install -y infisical; then
-          echo "❌ Failed to install Infisical CLI via apt"
+        if bash "$GITHUB_ACTION_PATH/scripts/install-infisical.sh" install; then
+          echo "INSTALL_FAILED=false" >> $GITHUB_ENV
+        else
+          echo "❌ Unable to install Infisical CLI from GitHub releases or apt"
           echo "INSTALL_FAILED=true" >> $GITHUB_ENV
           exit 1
         fi
 
-        mkdir -p .tools/infisical
-        cp "$(which infisical)" .tools/infisical/infisical
-        chmod +x .tools/infisical/infisical
-        echo "✅ Infisical CLI installed successfully"
-        echo "INSTALL_FAILED=false" >> $GITHUB_ENV
+    - name: Save Infisical CLI cache
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      if: steps.infisical-install.outputs.method == 'release'
+      with:
+        path: .tools/infisical
+        key: ${{ runner.os }}-${{ runner.arch }}-infisical-v${{ steps.infisical-install.outputs.version }}
 
     - name: Add Infisical to PATH
       shell: bash
