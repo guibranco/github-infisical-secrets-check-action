@@ -52,7 +52,7 @@ resolve() {
   fi
 
   local json
-  if ! json=$(curl -fsSL --retry 3 --retry-delay 2 \
+  if ! json=$(curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-delay 2 \
     -H "Accept: application/vnd.github+json" "${auth[@]}" \
     "https://api.github.com/repos/${REPO}/releases?per_page=30"); then
     echo "⚠️ Could not query the GitHub API for ${REPO} releases; will fall back to apt."
@@ -108,7 +108,7 @@ try_release() {
 
   echo "⬇️ Trying Infisical CLI ${tag#v} from ${url}"
 
-  if ! curl -fsSL --retry 3 --retry-delay 2 -o "${tmp}/${asset}" "$url"; then
+  if ! curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-delay 2 -o "${tmp}/${asset}" "$url"; then
     echo "  ⚠️ Download failed (HTTP error or network issue)"
     rm -rf "$tmp"
     return 1
@@ -156,7 +156,7 @@ try_release() {
 
 install_via_apt() {
   echo "📦 Falling back to the Infisical apt repository..."
-  if ! curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash; then
+  if ! curl -1sLf --proto '=https' --proto-redir '=https' 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash; then
     echo "❌ Failed to set up the Infisical apt repository"
     return 1
   fi
