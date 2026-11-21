@@ -16,6 +16,7 @@
 #   CANDIDATES      Space-separated release tags to try (install mode; from resolve)
 #   MAX_CANDIDATES  How many valid releases to consider (default: 5)
 #   INSTALL_DIR     Destination directory (default: .tools/infisical)
+#   CACHE_KEY_PREFIX  Prefix for the `restore-keys` output (resolve mode)
 
 set -uo pipefail
 
@@ -91,12 +92,38 @@ resolve() {
     echo "✅ Candidate releases (newest first): ${candidates}"
   fi
 
-  local first="${candidates%% *}"
+  local first="${candidates%% *}" tag
   {
     echo "arch=${ARCH}"
     echo "version=${first#v}"
     echo "candidates=${candidates}"
+    # Older candidates' cache keys, so a binary cached after a fallback can be restored.
+    echo "restore-keys<<EOF_RESTORE_KEYS"
+    for tag in ${candidates#"$first"}; do
+      echo "${CACHE_KEY_PREFIX:-}${tag#v}"
+    done
+    echo "EOF_RESTORE_KEYS"
   } >>"$GITHUB_OUTPUT"
+}
+
+place_binary() {
+  # $1 = source binary, $2 = "mv" or "cp". Returns non-zero if it cannot be placed.
+  local src="$1" op="$2"
+  if ! rm -rf "$INSTALL_DIR" || ! mkdir -p "$INSTALL_DIR"; then
+    echo "  ❌ Cannot create install directory ${INSTALL_DIR}"
+    return 1
+  fi
+  if ! "$op" "$src" "${INSTALL_DIR}/infisical" || ! chmod +x "${INSTALL_DIR}/infisical"; then
+    echo "  ❌ Cannot place the binary in ${INSTALL_DIR}"
+    return 1
+  fi
+}
+
+cached_version() {
+  # Prints the version of a binary restored from cache into INSTALL_DIR, if any.
+  local bin="${INSTALL_DIR}/infisical"
+  [[ -x "$bin" ]] || return 1
+  "$bin" --version 2>/dev/null | awk '{print $NF; exit}'
 }
 
 try_release() {
@@ -145,9 +172,10 @@ try_release() {
     return 1
   fi
 
-  rm -rf "$INSTALL_DIR"
-  mkdir -p "$INSTALL_DIR"
-  mv "$bin" "${INSTALL_DIR}/infisical"
+  if ! place_binary "$bin" mv; then
+    rm -rf "$tmp"
+    return 1
+  fi
   rm -rf "$tmp"
 
   echo "  ✅ Installed: ${reported}"
@@ -166,28 +194,51 @@ install_via_apt() {
     return 1
   fi
 
-  rm -rf "$INSTALL_DIR"
-  mkdir -p "$INSTALL_DIR"
-  cp "$(command -v infisical)" "${INSTALL_DIR}/infisical"
-  chmod +x "${INSTALL_DIR}/infisical"
+  # Use the executable owned by the package, not whatever comes first on PATH.
+  local pkg_bin
+  pkg_bin=$(dpkg -L infisical 2>/dev/null | grep -E '/bin/infisical$' | head -n 1)
+  if [[ -z "$pkg_bin" || ! -x "$pkg_bin" ]]; then
+    echo "❌ Could not locate the infisical executable installed by the apt package"
+    return 1
+  fi
+  if ! place_binary "$pkg_bin" cp; then
+    return 1
+  fi
 
   local version
   version=$(dpkg-query -W -f='${Version}' infisical 2>/dev/null || true)
-  echo "✅ Installed Infisical CLI ${version} via apt"
-  echo "version=${version}" >>"$GITHUB_OUTPUT"
-  echo "method=apt" >>"$GITHUB_OUTPUT"
+  echo "✅ Installed Infisical CLI ${version} via apt (${pkg_bin})"
+  {
+    echo "version=${version}"
+    echo "method=apt"
+  } >>"$GITHUB_OUTPUT"
 }
 
 install() {
-  local tag attempted=0
+  local tag attempted=0 cached
+  cached="$(cached_version || true)"
+  if [[ -n "$cached" ]]; then
+    echo "ℹ️ Found cached Infisical CLI ${cached} (restored from a previous fallback)"
+  fi
+
   for tag in ${CANDIDATES:-}; do
     attempted=$((attempted + 1))
+    if [[ -n "$cached" && "${tag#v}" == "$cached" ]]; then
+      echo "✅ Using cached Infisical CLI ${cached}; newer release(s) were unusable"
+      {
+        echo "version=${cached}"
+        echo "method=cache"
+      } >>"$GITHUB_OUTPUT"
+      return 0
+    fi
     if try_release "$tag"; then
       if [[ $attempted -gt 1 ]]; then
         echo "ℹ️ Fell back to ${tag} because newer release(s) were unusable"
       fi
-      echo "version=${tag#v}" >>"$GITHUB_OUTPUT"
-      echo "method=release" >>"$GITHUB_OUTPUT"
+      {
+        echo "version=${tag#v}"
+        echo "method=release"
+      } >>"$GITHUB_OUTPUT"
       return 0
     fi
     echo "↩️ ${tag} is unusable, trying the previous release..."

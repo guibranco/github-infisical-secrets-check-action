@@ -55,6 +55,7 @@ runs:
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
+        CACHE_KEY_PREFIX: ${{ runner.os }}-${{ runner.arch }}-infisical-v
       run: bash "$GITHUB_ACTION_PATH/scripts/install-infisical.sh" resolve
 
     - name: Restore Infisical CLI cache
@@ -63,7 +64,8 @@ runs:
       if: steps.infisical-version.outputs.version != ''
       with:
         path: .tools/infisical
-        key: ${{ runner.os }}-${{ steps.infisical-version.outputs.arch }}-infisical-v${{ steps.infisical-version.outputs.version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-infisical-v${{ steps.infisical-version.outputs.version }}
+        restore-keys: ${{ steps.infisical-version.outputs.restore-keys }}
 
     - name: Install Infisical CLI if needed
       id: infisical-install
@@ -86,7 +88,7 @@ runs:
       if: steps.infisical-install.outputs.method == 'release'
       with:
         path: .tools/infisical
-        key: ${{ runner.os }}-${{ steps.infisical-version.outputs.arch }}-infisical-v${{ steps.infisical-install.outputs.version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-infisical-v${{ steps.infisical-install.outputs.version }}
 
     - name: Add Infisical to PATH
       shell: bash
