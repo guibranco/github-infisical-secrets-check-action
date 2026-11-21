@@ -17,6 +17,7 @@
 #   MAX_CANDIDATES  How many valid releases to consider (default: 5)
 #   INSTALL_DIR     Destination directory (default: .tools/infisical)
 #   CACHE_KEY_PREFIX  Prefix for the `restore-keys` output (resolve mode)
+#   CACHE_RESTORED_KEY  Key restored by actions/cache (install mode); enables reuse of a cached binary
 
 set -uo pipefail
 
@@ -108,22 +109,32 @@ resolve() {
 
 place_binary() {
   # $1 = source binary, $2 = "mv" or "cp". Returns non-zero if it cannot be placed.
-  local src="$1" op="$2"
-  if ! rm -rf "$INSTALL_DIR" || ! mkdir -p "$INSTALL_DIR"; then
-    echo "  ❌ Cannot create install directory ${INSTALL_DIR}"
+  # The binary is staged first and only swapped in once staging succeeds, so a
+  # failure never destroys what is already in INSTALL_DIR (e.g. a restored cache).
+  local src="$1" op="$2" staging="${INSTALL_DIR}.staging"
+  rm -rf "$staging"
+  if ! mkdir -p "$staging" ||
+    ! "$op" "$src" "${staging}/infisical" ||
+    ! chmod +x "${staging}/infisical"; then
+    echo "  ❌ Cannot place the binary in ${INSTALL_DIR}"
+    rm -rf "$staging"
     return 1
   fi
-  if ! "$op" "$src" "${INSTALL_DIR}/infisical" || ! chmod +x "${INSTALL_DIR}/infisical"; then
-    echo "  ❌ Cannot place the binary in ${INSTALL_DIR}"
+  if ! rm -rf "$INSTALL_DIR" || ! mv "$staging" "$INSTALL_DIR"; then
+    echo "  ❌ Cannot replace ${INSTALL_DIR}"
+    rm -rf "$staging"
     return 1
   fi
 }
 
 cached_version() {
-  # Prints the version of a binary restored from cache into INSTALL_DIR, if any.
-  local bin="${INSTALL_DIR}/infisical"
-  [[ -x "$bin" ]] || return 1
-  "$bin" --version 2>/dev/null | awk '{print $NF; exit}'
+  # Prints the version of a binary restored from the actions cache into INSTALL_DIR.
+  # Only trusted when the cache step reported a restored key (CACHE_RESTORED_KEY),
+  # so an executable committed to the repository at that path is never run.
+  local bin="${INSTALL_DIR}/infisical" out
+  [[ -n "${CACHE_RESTORED_KEY:-}" && -x "$bin" ]] || return 1
+  out=$("$bin" --version 2>/dev/null) || return 1
+  awk '{print $NF; exit}' <<<"$out"
 }
 
 try_release() {
@@ -223,7 +234,7 @@ install() {
 
   for tag in ${CANDIDATES:-}; do
     attempted=$((attempted + 1))
-    if [[ -n "$cached" && "${tag#v}" == "$cached" ]]; then
+    if [[ -n "$cached" && "${tag#v}" == "$cached" ]] && "${INSTALL_DIR}/infisical" --version >/dev/null 2>&1; then
       echo "✅ Using cached Infisical CLI ${cached}; newer release(s) were unusable"
       {
         echo "version=${cached}"

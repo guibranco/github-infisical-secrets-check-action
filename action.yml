@@ -56,7 +56,10 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.GH_TOKEN }}
         CACHE_KEY_PREFIX: ${{ runner.os }}-${{ runner.arch }}-infisical-v
-      run: bash "$GITHUB_ACTION_PATH/scripts/install-infisical.sh" resolve
+      run: |
+        # Never trust anything at the install path that didn't come from the cache.
+        rm -rf .tools/infisical .tools/infisical.staging
+        bash "$GITHUB_ACTION_PATH/scripts/install-infisical.sh" resolve
 
     - name: Restore Infisical CLI cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -73,6 +76,7 @@ runs:
       shell: bash
       env:
         CANDIDATES: ${{ steps.infisical-version.outputs.candidates }}
+        CACHE_RESTORED_KEY: ${{ steps.infisical-cache.outputs.cache-matched-key }}
         INSTALL_DIR: .tools/infisical
       run: |
         if bash "$GITHUB_ACTION_PATH/scripts/install-infisical.sh" install; then
